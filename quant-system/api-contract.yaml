@@ -1,0 +1,338 @@
+openapi: 3.0.3
+info:
+  title: Quant System Headless API
+  version: 1.0.0
+  description: |
+    v1 API contract for headless A-share quant system.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /symbols:
+    get:
+      summary: List symbols
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        '200':
+          description: Symbol list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SymbolListResponse'
+  /daily/{symbol}:
+    get:
+      summary: Query daily bars by symbol and date range
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema: { type: string, example: 600519.SH }
+        - in: query
+          name: start_date
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: end_date
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: adjust
+          schema: { type: string, enum: [qfq, hfq, none], default: qfq }
+      responses:
+        '200':
+          description: Daily bars
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyResponse'
+  /strategies:
+    post:
+      summary: Create strategy config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrategyConfig'
+      responses:
+        '201':
+          description: Strategy created
+    get:
+      summary: List strategy configs
+      responses:
+        '200':
+          description: Strategy list
+  /strategies/{strategy_id}:
+    get:
+      summary: Get strategy by id
+      parameters:
+        - in: path
+          name: strategy_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Strategy detail
+  /strategies/{strategy_id}/validate:
+    post:
+      summary: Validate strategy config
+      parameters:
+        - in: path
+          name: strategy_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Validation result
+  /runs/schedule:
+    post:
+      summary: Create run schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [strategy_id, schedule_type, schedule_value]
+              properties:
+                strategy_id: { type: string }
+                schedule_type: { type: string, enum: [daily, weekly] }
+                schedule_value: { type: string }
+      responses:
+        '201':
+          description: Schedule created
+    get:
+      summary: List schedules
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+      responses:
+        '200':
+          description: Schedule list
+  /runs/trigger:
+    post:
+      summary: Trigger a schedule immediately
+      parameters:
+        - in: query
+          name: schedule_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Triggered schedule run
+  /sync/jobs:
+    get:
+      summary: List recent sync jobs
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+      responses:
+        '200':
+          description: Sync job list
+  /sync/jobs/latest:
+    get:
+      summary: Get latest sync job
+      responses:
+        '200':
+          description: Latest sync job
+  /sync/jobs/{job_id}/quality:
+    get:
+      summary: Get latest quality report for a sync job
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Quality report
+  /backtests:
+    get:
+      summary: List backtest tasks
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+        - in: query
+          name: status
+          schema: { type: string, enum: [queued, running, success, failed] }
+      responses:
+        '200':
+          description: Backtest list
+  /backtests/{task_id}/diagnosis:
+    get:
+      summary: Diagnose a backtest task
+      parameters:
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Backtest diagnosis
+  /backtests/run:
+    post:
+      summary: Trigger backtest task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [strategy_id, start_date, end_date]
+              properties:
+                strategy_id: { type: string }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+      responses:
+        '202':
+          description: Task accepted
+
+  /backtests/{task_id}/execute:
+    post:
+      summary: Execute queued backtest task immediately (minimal engine)
+      parameters:
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Backtest execution completed
+  /backtests/{task_id}/transition:
+    post:
+      summary: Transition backtest task status
+      parameters:
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [queued, running, success, failed] }
+                report: { type: object }
+      responses:
+        '200':
+          description: Task status transitioned
+  /backtests/{task_id}/status:
+    get:
+      summary: Query task status
+      parameters:
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Task status
+  /backtests/{task_id}/report:
+    get:
+      summary: Get backtest report
+      parameters:
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Backtest report
+components:
+  schemas:
+    Symbol:
+      type: object
+      properties:
+        symbol: { type: string }
+        name: { type: string }
+        exchange: { type: string }
+    SymbolListResponse:
+      type: object
+      properties:
+        count: { type: integer }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Symbol' }
+    DailyBar:
+      type: object
+      properties:
+        symbol: { type: string }
+        trade_date: { type: string, format: date }
+        open: { type: number }
+        close: { type: number }
+        high: { type: number }
+        low: { type: number }
+        volume: { type: number }
+        amount: { type: number }
+        amplitude: { type: number }
+        pct_chg: { type: number }
+        change: { type: number }
+        turnover: { type: number }
+        adjust: { type: string }
+    DailyResponse:
+      type: object
+      properties:
+        symbol: { type: string }
+        count: { type: integer }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/DailyBar' }
+    StrategyConfig:
+      type: object
+      required: [name, schema_version, universe, rebalance, risk]
+      properties:
+        name: { type: string }
+        schema_version: { type: string, example: '1.0.0' }
+        universe:
+          type: object
+          properties:
+            exclude_st: { type: boolean }
+            min_list_days: { type: integer, minimum: 0 }
+        fundamental:
+          type: object
+          properties:
+            roe_min: { type: number }
+            pe_min: { type: number }
+            pe_max: { type: number }
+        technical:
+          type: object
+          properties:
+            ma_short: { type: integer }
+            ma_long: { type: integer }
+        rebalance:
+          type: object
+          required: [freq, hold_count]
+          properties:
+            freq: { type: string, enum: [daily, weekly, monthly] }
+            hold_count: { type: integer, minimum: 1 }
+        risk:
+          type: object
+          required: [max_position]
+          properties:
+            max_position: { type: number, minimum: 0, maximum: 1 }
+            stop_loss: { type: number, minimum: 0, maximum: 1 }
