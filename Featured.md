@@ -80,6 +80,7 @@
 [SwiftWebSocket](https://github.com/tidwall/SwiftWebSocket)|[Josh Baker](https://github.com/tidwall)|WebSocket 协议（RFC 6455）实现类库
 [APIKit](https://github.com/ishkawa/APIKit)|[Yosuke Ishikawa](https://github.com/ishkawa)|安全地可定制化网络请求基础类库
 [Stargate](https://github.com/contentful-labs/Stargate)|[contentful-labs](https://github.com/contentful-labs)|通过 iPhone 桥接实现 Mac 与 Watch 的即时通讯
+[CocoaMultipeer](https://github.com/manavgabhawala/CocoaMultipeer)|[Manav Gabhawala](https://github.com/manavgabhawala)|支持 iOS、watchOS 与 Mac(OS X) 设备间点对点连接通信
 [CoreStore](https://github.com/JohnEstropia/CoreStore)|[John Estropia](https://github.com/JohnEstropia/)|提供高可读性，一致性及安全性的 Core Data 管理类库
 [TLMetaResolver](https://github.com/tryolabs/TLMetaResolver)|[Tryolabs](https://github.com/tryolabs)|解析 HTML 头部 Meta Tags 
 [Ji](https://github.com/honghaoz/Ji)|[@HonghaoZ](http://weibo.com/billyzhanghonghao)|Swift 版 HTML/XML 解析器
